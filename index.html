@@ -1,30 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Poker</title>
-    <link rel="stylesheet" href="./style.css">
-</head>
-<body>
-    <h1>Poker</h1>
-    <button class="button-15  js-new-game-button">Új Játék</button>
-    <section class="js-bet-area invisible">
-        <label for="bet-amount">Bet</label>
-        <input 
-            type="range" 
-            class="bet-slider"
-            id="bet-amount" 
-            name="bet-amount"
-            min="1" 
-            max="1" />
-        <label for="bet-amount" class="js-slider-value"></label>
-        <button class="button-15  js-bet-button">Bet</button>
-    </section>
-    <section class="js-chip-count-container"></section>
-    <section class="js-player-cards-container"></section>
-    <section class="js-pot-container"></section>
-    <script src="./poker.js"></script>
-</body>
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Poker</title>
+        <link rel="stylesheet" href="./style.css" />
+    </head>
+    <body>
+        <h1>Poker</h1>
+        <button class="button-15 js-new-game-button">Új Játék</button>
+        <section class="js-bet-area invisible">
+            <label for="bet-amount">Bet</label>
+            <input type="range" class="bet-slider" id="bet-amount" name="bet-amount" min="1" max="1" />
+            <label for="bet-amount" class="js-slider-value"></label>
+            <button class="button-15 js-bet-button">Bet</button>
+        </section>
+        <section class="js-player-chip-container"></section>
+        <section class="js-player-cards-container"></section>
+        <section class="js-computer-chip-container"></section>
+        <section class="js-computer-cards-container"></section>
+        <section class="js-computer-action"></section>
+        <section class="js-pot-container"></section>
+        <script src="./poker.js"></script>
+    </body>
 </html>
