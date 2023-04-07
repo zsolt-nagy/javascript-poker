@@ -12,11 +12,14 @@ const computerCardsContainer = document.querySelector(".js-computer-cards-contai
 const computerChipContainer = document.querySelector(".js-computer-chip-container");
 const computerActionContainer = document.querySelector(".js-computer-action");
 
+const communityCardsContainer = document.querySelector(".js-community-cards");
+
 // program state
 let {
     deckId,
     playerCards, // játékos lapjai
-    computerCards, // számítógép lapjai (TODO: private? OOP??)
+    computerCards, // számítógép lapjai
+    communityCards, // közös lapok
     computerAction, // játékos cselekedete (call, fold)
     playerChips, // játékos zsetonjai
     playerBets, // játékos licitje ebben a licitkörben
@@ -31,6 +34,7 @@ function getInitialState() {
         deckId: null,
         playerCards: [],
         computerCards: [],
+        communityCards: [],
         computerAction: null,
         playerChips: 100,
         playerBets: 0,
@@ -46,6 +50,7 @@ function initialize() {
         deckId,
         playerCards,
         computerCards,
+        communityCards,
         computerAction,
         playerChips,
         playerBets,
@@ -82,6 +87,7 @@ function renderCardsInContainer(cards, container) {
 function renderAllCards() {
     renderCardsInContainer(playerCards, playerCardsContainer);
     renderCardsInContainer(computerCards, computerCardsContainer);
+    renderCardsInContainer(communityCards, communityCardsContainer);
 }
 
 function renderChips() {
@@ -148,11 +154,21 @@ function startGame() {
     startHand();
 }
 
-function endHand() {
+function endHand(winner = null) {
     setTimeout(() => {
         if (computerAction === "Fold") {
             // TODO: felsorolt típus kell az akcióknak
             playerChips += pot;
+            pot = 0;
+        } else if (winner === "Player") {
+            playerChips += pot;
+            pot = 0;
+        } else if (winner === "Computer") {
+            computerChips += pot;
+            pot = 0;
+        } else if (winner === "Draw") {
+            playerChips += playerBets;
+            computerChips += computerBets;
             pot = 0;
         }
         deckId = null;
@@ -183,16 +199,50 @@ function shouldComputerCall(computerCards) {
     );
 }
 
+const SHOWDOWN_API_PREFIX = "https://api.pokerapi.dev/v1/winner/texas_holdem";
+function cardsToString(cards) {
+    return cards.map((x) => (x.code[0] === "0" ? "1" + x.code : x.code)).toString();
+}
+async function getWinner() {
+    // https://api.pokerapi.dev/v1/winner/texas_holdem?cc=AC,KD,QH,JS,7C&pc[]=10S,8C&pc[]=3S,2C&pc[]=QS,JH
+    const cc = cardsToString(communityCards);
+    const pc0 = cardsToString(playerCards);
+    const pc1 = cardsToString(computerCards);
+    const data = await fetch(`${SHOWDOWN_API_PREFIX}?cc=${cc}&pc[]=${pc0}&pc[]=${pc1}`);
+    const response = await data.json();
+    const winners = response.winners;
+    if (winners.length === 2) {
+        return "Draw"; // TODO: felsorolt típus
+    } else if (winners[0].cards === pc0) {
+        // Játékos nyert
+        return "Player";
+    } else {
+        return "Computer";
+    }
+}
+
+async function showdown() {
+    const data = await fetch(`https://deckofcardsapi.com/api/deck/${deckId}/draw/?count=5`);
+    const response = await data.json();
+    communityCards = response.cards;
+    render();
+    const winner = await getWinner();
+    return winner;
+}
+
 function computerMoveAfterBet() {
     fetch(`https://deckofcardsapi.com/api/deck/${deckId}/draw/?count=2`)
         .then((data) => data.json())
-        .then(function (response) {
+        .then(async function (response) {
             if (pot === 4) {
                 computerAction = "Check";
-                computerCards = response.cards;
             } else if (shouldComputerCall(response.cards)) {
                 computerAction = "Call";
-                computerCards = response.cards;
+            } else {
+                computerAction = "Fold";
+            }
+
+            if (computerAction === "Call") {
                 // játékos: Bet (vaktétek és játékos licit)
                 // számítógép: 2
                 // kassza: Pot
@@ -204,11 +254,18 @@ function computerMoveAfterBet() {
                 computerChips -= difference;
                 computerBets += difference;
                 pot += difference;
-            } else {
-                computerAction = "Fold";
             }
-            render();
-            endHand();
+
+            if (computerAction === "Check" || computerAction == "Call") {
+                computerCards = response.cards;
+                render();
+                const winner = await showdown();
+                console.log(winner);
+                endHand(winner);
+            } else {
+                render();
+                endHand();
+            }
         });
 }
 
