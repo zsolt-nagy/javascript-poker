@@ -19,7 +19,9 @@ let {
     computerCards, // számítógép lapjai (TODO: private? OOP??)
     computerAction, // játékos cselekedete (call, fold)
     playerChips, // játékos zsetonjai
+    playerBets, // játékos licitje ebben a licitkörben
     computerChips, // gép zsetonjai
+    computerBets, // számítógép licitje ebben a licitkörben
     playerBetPlaced, // játékos már licitált
     pot, // kassza
 } = getInitialState();
@@ -31,15 +33,27 @@ function getInitialState() {
         computerCards: [],
         computerAction: null,
         playerChips: 100,
+        playerBets: 0,
         computerChips: 100,
+        computerBets: 0,
         playerBetPlaced: false,
         pot: 0,
     };
 }
 
 function initialize() {
-    ({ deckId, playerCards, computerCards, computerAction, playerChips, computerChips, playerBetPlaced, pot } =
-        getInitialState());
+    ({
+        deckId,
+        playerCards,
+        computerCards,
+        computerAction,
+        playerChips,
+        playerBets,
+        computerChips,
+        computerBets,
+        playerBetPlaced,
+        pot,
+    } = getInitialState());
 }
 
 function canBet() {
@@ -109,7 +123,9 @@ function drawAndRenderPlayerCards() {
 
 function postBlinds() {
     playerChips -= 1;
+    playerBets += 1;
     computerChips -= 2;
+    computerBets += 2;
     pot += 3;
     render();
 }
@@ -153,9 +169,23 @@ function computerMoveAfterBet() {
     fetch(`https://deckofcardsapi.com/api/deck/${deckId}/draw/?count=2`)
         .then((data) => data.json())
         .then(function (response) {
-            if (shouldComputerCall(response.cards)) {
+            if (pot === 4) {
+                computerAction = "Check";
+                computerCards = response.cards;
+            } else if (shouldComputerCall(response.cards)) {
                 computerAction = "Call";
                 computerCards = response.cards;
+                // játékos: Bet (vaktétek és játékos licit)
+                // számítógép: 2
+                // kassza: Pot
+                // Bet + 2 = Pot
+                // 2 zsetont már betett a számítógép vaktétként, így Bet - 2-t
+                // kell megadnia.
+                // Bet - 2 = Pot - 4
+                const difference = playerBets - computerBets;
+                computerChips -= difference;
+                computerBets += difference;
+                pot += difference;
             } else {
                 computerAction = "Fold";
             }
@@ -171,6 +201,7 @@ function bet() {
     playerChips -= betValue;
     // játék állapota: játékos megtette a tétjét
     playerBetPlaced = true;
+    playerBets += betValue;
     // újrarenderelünk
     render();
     // ellenfél reakciója
