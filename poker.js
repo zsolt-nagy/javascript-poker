@@ -120,12 +120,11 @@ function render() {
     renderActions();
 }
 
-async function drawAndRenderPlayerCards() {
+async function drawPlayerCards() {
     if (deckId == null) return;
     const data = await fetch(`https://deckofcardsapi.com/api/deck/${deckId}/draw/?count=2`);
     const response = await data.json();
     playerCards = response.cards;
-    render();
 }
 
 function postBlinds() {
@@ -144,7 +143,8 @@ async function startHand() {
     const data = await fetch("https://deckofcardsapi.com/api/deck/new/shuffle/?deck_count=1");
     const response = await data.json();
     deckId = response.deck_id;
-    drawAndRenderPlayerCards(); // TODO: refactorálás async-await segítségével
+    await drawPlayerCards();
+    render();
 }
 
 // Egy játék egy vagy több leosztásból áll.
