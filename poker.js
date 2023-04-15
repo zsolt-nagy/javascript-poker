@@ -236,7 +236,7 @@ async function getWinner() {
     const response = await data.json();
     const winners = response.winners;
     if (winners.length === 2) {
-        return WINNER.Draw;
+        return STATUS.Draw;
     } else if (winners[0].cards === pc0) {
         // Játékos nyert
         return STATUS.Player;
