@@ -48,10 +48,10 @@ function getInitialState() {
         computerCards: [],
         communityCards: [],
         computerAction: null,
-        playerChips: 50,
+        playerChips: 100,
         playerBets: 0,
         playerStatus: "",
-        computerChips: 200,
+        computerChips: 100,
         computerBets: 0,
         computerStatus: "",
         playerBetPlaced: false,
@@ -171,10 +171,15 @@ async function drawPlayerCards() {
 }
 
 function postBlinds() {
+    if (computerChips === 1) {
+        computerChips = 0;
+        computerBets = 1;
+    } else {
+        computerChips -= 2;
+        computerBets += 2;
+    }
     playerChips -= 1;
     playerBets += 1;
-    computerChips -= 2;
-    computerBets += 2;
     render();
 }
 
@@ -223,6 +228,9 @@ function endHand(winner = null) {
 
 function shouldComputerCall(computerCards) {
     if (computerCards.length !== 2) return false; // extra védelem
+    debugger;
+    if (computerChips === 0) return true; // számítógép all in van
+
     const card1Code = computerCards[0].code; // pl. AC, 4H, 9D, 0H (10: 0)
     const card2Code = computerCards[1].code;
     const card1Value = card1Code[0];
@@ -269,11 +277,20 @@ async function showdown() {
     return winner;
 }
 
+function returnExtraBetsFromPot() {
+    if (playerBets > computerChips + computerBets) {
+        let chipsToReturnToPlayer = playerBets - computerChips - computerBets;
+        playerBets -= chipsToReturnToPlayer;
+        playerChips += chipsToReturnToPlayer;
+    }
+}
+
 async function computerMoveAfterBet() {
     const data = await fetch(`https://deckofcardsapi.com/api/deck/${deckId}/draw/?count=2`);
     const response = await data.json();
 
-    if (getPot() === 4) {
+    // A játékos csak egészített VAGY a számítógépnek nincs licitálásra felhasználható zsetonja
+    if (playerBets === 2 || computerChips === 0) {
         computerAction = ACTIONS.Check;
     } else if (shouldComputerCall(response.cards)) {
         computerAction = ACTIONS.Call;
@@ -281,6 +298,9 @@ async function computerMoveAfterBet() {
         computerAction = ACTIONS.Fold;
     }
 
+    if (computerAction === ACTIONS.Check || computerAction === ACTIONS.Call) {
+        returnExtraBetsFromPot();
+    }
     if (computerAction === ACTIONS.Call) {
         // játékos: Bet (vaktétek és játékos licit)
         // számítógép: 2
@@ -289,11 +309,6 @@ async function computerMoveAfterBet() {
         // 2 zsetont már betett a számítógép vaktétként, így Bet - 2-t
         // kell megadnia.
         // Bet - 2 = Pot - 4
-        if (playerBets > computerChips + computerBets) {
-            let chipsToReturnToPlayer = playerBets - computerChips - computerBets;
-            playerBets -= chipsToReturnToPlayer;
-            playerChips += chipsToReturnToPlayer;
-        }
         const difference = playerBets - computerBets;
         computerChips -= difference;
         computerBets += difference;
