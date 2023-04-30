@@ -1,4 +1,5 @@
 const newGameButton = document.querySelector(".js-new-game-button");
+const newHandButton = document.querySelector(".js-new-hand-button");
 const potContainer = document.querySelector(".js-pot-container");
 
 const playerCardsContainer = document.querySelector(".js-player-cards-container");
@@ -47,10 +48,10 @@ function getInitialState() {
         computerCards: [],
         communityCards: [],
         computerAction: null,
-        playerChips: 100,
+        playerChips: 50,
         playerBets: 0,
         playerStatus: "",
-        computerChips: 50,
+        computerChips: 200,
         computerBets: 0,
         computerStatus: "",
         playerBetPlaced: false,
@@ -72,30 +73,32 @@ function getInitialState() {
 // computerAction = "";
 // Gyakorlatilag mindent resetelünk, kivéve a zsetonállást.
 
-function initialize() {
+function initializeGame() {
+    ({ playerChips, computerChips } = getInitialState());
+    initializeHand();
+}
+
+function initializeHand() {
     for (let id of timeoutIds) {
         clearTimeout(id);
     }
+    // A bet slider állapota csak a DOM-ban van rögzítve. Hozzuk alapértelmezésbe.
+    betSlider.value = 1;
+    // Feltételezzük, hogy később az alapértelmezett értékeket máshol renderelni
+    // fogjuk, ezért a slider értékét itt nem kell renderelnünk.
     ({
         deckId,
         playerCards,
         computerCards,
         communityCards,
         computerAction,
-        playerChips,
         playerBets,
         playerStatus,
-        computerChips,
         computerBets,
         computerStatus,
         playerBetPlaced,
         timeoutIds,
     } = getInitialState());
-
-    // A bet slider állapota csak a DOM-ban van rögzítve. Hozzuk alapértelmezésbe.
-    betSlider.value = 1;
-    // Feltételezzük, hogy később az alapértelmezett értékeket máshol renderelni
-    // fogjuk, ezért a slider értékét itt nem kell renderelnünk.
 }
 
 function canBet() {
@@ -177,6 +180,7 @@ function postBlinds() {
 
 // Egy leosztás indítása
 async function startHand() {
+    document.querySelector(".js-new-hand-button").setAttribute("disabled", true);
     // hand = leosztás
     postBlinds(); // vaktétek adminisztrálása
     const data = await fetch("https://deckofcardsapi.com/api/deck/new/shuffle/?deck_count=1");
@@ -188,7 +192,12 @@ async function startHand() {
 
 // Egy játék egy vagy több leosztásból áll.
 function startGame() {
-    initialize();
+    initializeGame();
+    startHand();
+}
+
+function newHand() {
+    initializeHand();
     startHand();
 }
 
@@ -205,6 +214,9 @@ function endHand(winner = null) {
         playerBets = 0;
         computerBets = 0;
         render();
+        if (computerChips > 0 && playerChips > 0) {
+            document.querySelector(".js-new-hand-button").removeAttribute("disabled");
+        }
     }, 2000);
     timeoutIds.push(id);
 }
@@ -339,6 +351,7 @@ function setSliderValue(percentage) {
 }
 
 newGameButton.addEventListener("click", startGame);
+newHandButton.addEventListener("click", newHand);
 
 betSlider.addEventListener("change", render);
 betSlider.addEventListener("input", render);
@@ -347,5 +360,5 @@ bet25Button.addEventListener("click", () => setSliderValue(25));
 bet50Button.addEventListener("click", () => setSliderValue(50));
 
 betButton.addEventListener("click", bet);
-initialize();
+initializeGame();
 render();
