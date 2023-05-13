@@ -20,8 +20,8 @@ body {
 }
 
 .main-area-container {
-  width: 85vw;
-  min-width: 844px;
+  width: 90vw;
+  min-width: 992px;
   margin: 2rem auto;
 }
 
@@ -48,8 +48,8 @@ body {
 }
 
 .pot-container, .cc-container {
-  width: calc(68vw + 2rem);
-  min-width: 708px;
+  width: calc(72vw + 2rem);
+  min-width: 825px;
   margin: 1rem auto;
 }
 
